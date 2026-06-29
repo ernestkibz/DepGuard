@@ -109,7 +109,7 @@ Exit code is `0` when all 8 checks pass, `1` otherwise.
 
 ```
 DepGuard/
-├── doctor.py              # CLI entry point
+├── depguard.py            # CLI entry point
 ├── checks/
 │   ├── __init__.py        # Check registry and version
 │   ├── base.py            # Shared types, OS helpers, fix commands
@@ -121,7 +121,7 @@ DepGuard/
 │   ├── docker.py
 │   ├── git_init.py
 │   └── venv_active.py
-├── pyproject.toml         # Package metadata; depguard + doctor commands
+├── pyproject.toml         # Package metadata and depguard console script
 ├── setup.md               # Install from GitHub, CI, project integration
 ├── requirements.txt
 ├── LICENSE
@@ -133,7 +133,7 @@ DepGuard/
 ## Architecture
 
 ```
-doctor.py
+depguard.py
     └── checks.ALL_CHECKS  (registry: display name → check_fn)
             └── check_*(project: Path) → CheckResult
                     └── checks.base helpers (encoding, OS detection, fix commands)

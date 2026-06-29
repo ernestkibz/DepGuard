@@ -53,7 +53,7 @@ pip install -e .
 
 # Minimal — run without installing the command
 pip install -r requirements.txt
-python doctor.py
+python depguard.py
 ```
 
 Verify:
@@ -174,7 +174,7 @@ Use the check engine inside your own scripts, onboarding tools, or tests:
 ```python
 from pathlib import Path
 
-from doctor import run_checks, score_results
+from depguard import run_checks, score_results
 
 project = Path(".").resolve()
 results = run_checks(project)

@@ -28,8 +28,7 @@ classifiers = [
 dependencies = ["rich>=13.7.0"]
 
 [project.scripts]
-depguard = "doctor:main"
-doctor = "doctor:main"
+depguard = "depguard:main"
 
 [project.urls]
 Homepage = "https://github.com/ernestkibz/DepGuard"
@@ -41,4 +40,4 @@ Repository = "https://github.com/ernestkibz/DepGuard"
 include = ["checks*"]
 
 [tool.setuptools]
-py-modules = ["doctor"]
+py-modules = ["depguard"]
