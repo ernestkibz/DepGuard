@@ -22,7 +22,7 @@ depguard /path/to/your/project
 Pin a specific release tag when you need a stable version:
 
 ```bash
-pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.0.0"
+pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.0.1"
 ```
 
 ---
@@ -110,7 +110,7 @@ Run: `npm run setup-check` (DepGuard must be installed in the environment that r
 Add to `requirements-dev.txt`:
 
 ```text
-git+https://github.com/ernestkibz/DepGuard.git@v1.0.0
+git+https://github.com/ernestkibz/DepGuard.git@v1.0.1
 ```
 
 Install with your other dev tools:
@@ -123,7 +123,7 @@ Or in `pyproject.toml` (optional dev group):
 
 ```toml
 [project.optional-dependencies]
-dev = ["depguard @ git+https://github.com/ernestkibz/DepGuard.git@v1.0.0"]
+dev = ["depguard @ git+https://github.com/ernestkibz/DepGuard.git@v1.0.1"]
 ```
 
 ```bash

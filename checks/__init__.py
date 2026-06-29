@@ -1,6 +1,6 @@
 """DepGuard — project setup checks."""
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 from checks.base import CheckResult, Status
 from checks.docker import check_docker
