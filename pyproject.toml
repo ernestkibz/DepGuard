@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "depguard"
+version = "1.0.0"
+description = "DepGuard — scan any project folder, diagnose setup problems, and get exact fix commands."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Ernest Kibz" }]
+keywords = ["cli", "developer-tools", "setup", "diagnostics", "onboarding", "depguard"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = ["rich>=13.7.0"]
+
+[project.scripts]
+depguard = "doctor:main"
+doctor = "doctor:main"
+
+[project.urls]
+Homepage = "https://github.com/ernestkibz/DepGuard"
+Documentation = "https://github.com/ernestkibz/DepGuard/blob/main/setup.md"
+Issues = "https://github.com/ernestkibz/DepGuard/issues"
+Repository = "https://github.com/ernestkibz/DepGuard"
+
+[tool.setuptools.packages.find]
+include = ["checks*"]
+
+[tool.setuptools]
+py-modules = ["doctor"]

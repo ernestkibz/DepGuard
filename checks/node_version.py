@@ -1,0 +1,112 @@
+"""Check that the active Node.js version matches project constraints."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+from pathlib import Path
+
+from checks.base import (
+    CheckResult,
+    Status,
+    command_exists,
+    extract_minimum_version,
+    first_line,
+    node_version_fix,
+    parse_version_numbers,
+    read_text,
+    run_command,
+    satisfies_minimum,
+    version_to_string,
+)
+
+
+def _required_from_nvmrc(project: Path) -> tuple[int, int, int] | None:
+    nvmrc = project / ".nvmrc"
+    if not nvmrc.is_file():
+        return None
+
+    try:
+        content = first_line(read_text(nvmrc))
+    except (RuntimeError, IndexError):
+        return None
+
+    if not content:
+        return None
+    if content.startswith("v"):
+        content = content[1:]
+    return parse_version_numbers(content)
+
+
+def _required_from_package_json(project: Path) -> tuple[int, int, int] | None:
+    package_json = project / "package.json"
+    if not package_json.is_file():
+        return None
+
+    try:
+        data = json.loads(read_text(package_json))
+    except (RuntimeError, json.JSONDecodeError):
+        return None
+
+    engines = data.get("engines") or {}
+    node_spec = engines.get("node")
+    if not node_spec:
+        return None
+    return extract_minimum_version(str(node_spec))
+
+
+def check_node_version(project: Path) -> CheckResult:
+    name = "Node Version"
+    required = _required_from_nvmrc(project) or _required_from_package_json(project)
+
+    if required is None:
+        return CheckResult(
+            name=name,
+            status=Status.PASS,
+            message="No Node.js version constraint found (.nvmrc or package.json engines).",
+        )
+
+    if not command_exists("node"):
+        required_text = version_to_string(required)
+        return CheckResult(
+            name=name,
+            status=Status.FAIL,
+            message=f"Node.js is not installed, but {required_text} is required.",
+            fix_command=node_version_fix(required_text),
+        )
+
+    try:
+        result = run_command(["node", "--version"], cwd=project, timeout=10)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return CheckResult(
+            name=name,
+            status=Status.FAIL,
+            message=f"Could not read Node.js version: {exc}",
+            fix_command=node_version_fix(required_text),
+        )
+
+    if result.returncode != 0:
+        return CheckResult(
+            name=name,
+            status=Status.FAIL,
+            message="Node.js is installed but `node --version` failed.",
+            fix_command=node_version_fix(required_text),
+        )
+
+    current = parse_version_numbers(result.stdout.strip())
+    required_text = version_to_string(required)
+    current_text = version_to_string(current)
+
+    if satisfies_minimum(current, required):
+        return CheckResult(
+            name=name,
+            status=Status.PASS,
+            message=f"Node.js {current_text} satisfies required {required_text}.",
+        )
+
+    return CheckResult(
+        name=name,
+        status=Status.FAIL,
+        message=f"Node.js {current_text} does not satisfy required {required_text}.",
+        fix_command=node_version_fix(required_text),
+    )
