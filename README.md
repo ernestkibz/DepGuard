@@ -105,6 +105,12 @@ Exit code is `0` when all 8 checks pass, `1` otherwise.
 
 ---
 
+## Screenshots
+
+![DepGuard scanning a real project — pass, fail, and warn checks with fix commands](docs/screenshots/depguard-scan.png)
+
+---
+
 ## Project structure
 
 ```
