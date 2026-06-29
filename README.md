@@ -178,6 +178,7 @@ Register it in `checks/__init__.py` inside `ALL_CHECKS`.
 ## Integrations
 
 - [DepGuard for Slack](https://github.com/ernestkibz/depguard-slack) — Scan any public GitHub repo directly inside Slack with `/depguard`
+- Local copy: [`depguard-slack/`](depguard-slack/) — Slack bot + MCP server (separate git repo)
 
 ---
 

@@ -23,3 +23,8 @@ Thumbs.db
 # Local overrides
 .env
 *.local
+*.log
+logs/
+
+# Separate repo — github.com/ernestkibz/depguard-slack
+depguard-slack/
