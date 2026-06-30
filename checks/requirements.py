@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
 from checks.base import CheckResult, Status, run_command
+from checks.detection import ProjectContext
 
 
-def check_requirements(project: Path) -> CheckResult:
+def check_requirements(context: ProjectContext) -> CheckResult | None:
     name = "Requirements Installable"
+    if not context.has_language("python"):
+        return None
+
+    project = context.project
     req_file = project / "requirements.txt"
 
     if not req_file.is_file():

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import os
 import sys
-from pathlib import Path
 
 from checks.base import CheckResult, Status, venv_create_and_activate_fix
+from checks.detection import ProjectContext
 
 
-def _looks_like_python_project(project: Path) -> bool:
+def _looks_like_python_project(context: ProjectContext) -> bool:
+    project = context.project
     markers = (
         "requirements.txt",
         "pyproject.toml",
@@ -21,15 +22,11 @@ def _looks_like_python_project(project: Path) -> bool:
     return any((project / marker).is_file() for marker in markers)
 
 
-def check_venv_active(project: Path) -> CheckResult:
+def check_venv_active(context: ProjectContext) -> CheckResult | None:
     name = "Virtual Environment"
 
-    if not _looks_like_python_project(project):
-        return CheckResult(
-            name=name,
-            status=Status.PASS,
-            message="Not a Python project — virtual environment not required.",
-        )
+    if not context.has_language("python") or not _looks_like_python_project(context):
+        return None
 
     in_venv = (
         os.environ.get("VIRTUAL_ENV") is not None

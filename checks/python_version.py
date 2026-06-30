@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 import sys
-from pathlib import Path
 
 from checks.base import (
     CheckResult,
@@ -17,9 +16,11 @@ from checks.base import (
     satisfies_minimum,
     version_to_string,
 )
+from checks.detection import ProjectContext
 
 
-def _required_from_pyproject(project: Path) -> tuple[int, int, int] | None:
+def _required_from_pyproject(context: ProjectContext) -> tuple[int, int, int] | None:
+    project = context.project
     pyproject = project / "pyproject.toml"
     if not pyproject.is_file():
         return None
@@ -39,7 +40,8 @@ def _required_from_pyproject(project: Path) -> tuple[int, int, int] | None:
     return None
 
 
-def _required_from_python_version(project: Path) -> tuple[int, int, int] | None:
+def _required_from_python_version(context: ProjectContext) -> tuple[int, int, int] | None:
+    project = context.project
     dot_file = project / ".python-version"
     if not dot_file.is_file():
         return None
@@ -54,9 +56,12 @@ def _required_from_python_version(project: Path) -> tuple[int, int, int] | None:
     return parse_version_numbers(content)
 
 
-def check_python_version(project: Path) -> CheckResult:
+def check_python_version(context: ProjectContext) -> CheckResult | None:
     name = "Python Version"
-    required = _required_from_python_version(project) or _required_from_pyproject(project)
+    if not context.has_language("python"):
+        return None
+
+    required = _required_from_python_version(context) or _required_from_pyproject(context)
 
     if required is None:
         return CheckResult(
@@ -78,7 +83,7 @@ def check_python_version(project: Path) -> CheckResult:
             message=f"Python {current_text} satisfies required {required_text}.",
         )
 
-    fix = python_version_fix(project, required_text)
+    fix = python_version_fix(context.project, required_text)
     return CheckResult(
         name=name,
         status=Status.FAIL,

@@ -10,10 +10,10 @@ DepGuard and DepGuard for Slack are **different repos**. Do not merge them.
 
 | Project | GitHub | Purpose |
 |---------|--------|---------|
-| **DepGuard** (this repo) | [github.com/ernestkibz/DepGuard](https://github.com/ernestkibz/DepGuard) | CLI — scan local folders, 8 checks, Rich output |
+| **DepGuard** (this repo) | [github.com/ernestkibz/DepGuard](https://github.com/ernestkibz/DepGuard) | CLI — detect the stack in a local folder and run relevant checks |
 | **DepGuard for Slack** | [github.com/ernestkibz/depguard-slack](https://github.com/ernestkibz/depguard-slack) | Slack bot + MCP server — scan public GitHub repos from Slack |
 
-- **Current release tag:** `v1.0.1` (entry point is `depguard.py`, not `doctor.py`)
+- **Current release tag:** `v1.1.0` (entry point is `depguard.py`, not `doctor.py`)
 - **Local workspace note:** You may have `depguard-slack/` as a sibling folder for convenience. It is listed in this repo's `.gitignore` and has its **own** `.git` — commit Slack work only in the depguard-slack repo.
 
 Slack setup, Railway deployment, and MCP integration: see [depguard-slack/setup.md](https://github.com/ernestkibz/depguard-slack/blob/main/setup.md) (or `depguard-slack/setup.md` locally).
@@ -25,7 +25,7 @@ Slack setup, Railway deployment, and MCP integration: see [depguard-slack/setup.
 No clone required — install directly with pip:
 
 ```bash
-pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.0.1"
+pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.0"
 ```
 
 Then scan any project folder:
@@ -70,7 +70,7 @@ Verify:
 
 ```bash
 depguard --version
-# DepGuard 1.0.1
+# DepGuard 1.1.0
 ```
 
 ---
@@ -92,7 +92,16 @@ Or from anywhere:
 depguard /path/to/your/app
 ```
 
-Exit code `0` means all 8 checks passed; `1` means at least one failed or warned.
+Exit code `0` means all relevant checks passed; `1` means at least one failed or warned.
+
+### What DepGuard detects now
+
+- **Languages:** Python, Node.js, Java, Go, .NET / C#, PHP, Rust, Ruby
+- **Frameworks:** React, Next.js, Django, Flask, FastAPI, Spring Boot, ASP.NET, Laravel, Ruby on Rails
+- **Infrastructure:** Docker, Docker Compose, Kubernetes, GitHub Actions, Terraform
+- **Databases:** PostgreSQL, MySQL, MongoDB, Redis, Oracle Database
+
+DepGuard first builds a project context from manifests, framework markers, infrastructure files, and known code imports. It then runs only the checks that apply to that project.
 
 ### Add to your project's `Makefile`
 
@@ -116,14 +125,14 @@ setup-check:
 
 ```text
 # requirements-dev.txt
-git+https://github.com/ernestkibz/DepGuard.git@v1.0.1
+git+https://github.com/ernestkibz/DepGuard.git@v1.1.0
 ```
 
 Or in `pyproject.toml`:
 
 ```toml
 [project.optional-dependencies]
-dev = ["depguard @ git+https://github.com/ernestkibz/DepGuard.git@v1.0.1"]
+dev = ["depguard @ git+https://github.com/ernestkibz/DepGuard.git@v1.1.0"]
 ```
 
 ---
@@ -147,7 +156,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.0.1"
+      - run: pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.0"
       - run: depguard .
 ```
 
@@ -179,7 +188,7 @@ from checks.env_file import check_env_file
 print(check_requirements(Path(".")))
 ```
 
-The Slack bot imports the same engine via `pip install depguard @ git+...@v1.0.1` in its own repo.
+The Slack bot imports the same engine via `pip install depguard @ git+...@v1.1.0` in its own repo.
 
 ---
 
@@ -189,8 +198,16 @@ The Slack bot imports the same engine via `pip install depguard @ git+...@v1.0.1
 |------|-----------|------|
 | Python 3.10+ | Yes | Always |
 | pip | Yes | Always |
-| Node.js | No | Only if the scanned project has `package.json` / `.nvmrc` |
-| Docker | No | Only if the scanned project has a `Dockerfile` |
+| Node.js | No | Only if the scanned project has Node markers or source files |
+| Java | No | Only if the scanned project has `pom.xml`, `build.gradle`, or Java source |
+| Go | No | Only if the scanned project has `go.mod` or Go source |
+| .NET SDK | No | Only if the scanned project has `.csproj`, `global.json`, or C# source |
+| PHP | No | Only if the scanned project has `composer.json` or PHP source |
+| Rust | No | Only if the scanned project has `Cargo.toml` or Rust source |
+| Ruby | No | Only if the scanned project has `Gemfile` or Ruby source |
+| Docker | No | Only if the scanned project contains Docker or Compose files |
+| kubectl | No | Only if Kubernetes manifests are detected |
+| Terraform | No | Only if Terraform files are detected |
 | Git | No | Only for the Git initialized check on the target project |
 
 Runtime dependency: [Rich](https://github.com/Textualize/rich) only.
@@ -217,18 +234,20 @@ Cross-platform Python CLI. Entry point: `depguard.py`. Package name: `depguard`.
 
 ### What was built (history)
 
-1. Eight modular checks in `checks/` with registry in `checks/__init__.py`
-2. Cross-platform fix commands centralized in `checks/base.py`
-3. Renamed from `doctor.py` → `depguard.py` at v1.0.1
-4. Packaging via `pyproject.toml` with console script `depguard`
-5. Screenshot at `docs/screenshots/depguard-scan.png`
-6. Stress tests removed — production CLI only
-7. Slack integration lives in **separate repo** — do not add Slack code here
+1. Context-driven detection in `checks/detection.py` for languages, frameworks, infrastructure, and databases
+2. Source-aware dependency sensing that compares known imports against manifest declarations
+3. Runtime version checks for Python, Node.js, Java, Go, .NET, PHP, Rust, and Ruby
+4. Cross-platform fix commands centralized in `checks/base.py`
+5. Renamed from `doctor.py` → `depguard.py`, now at `v1.1.0`
+6. Packaging via `pyproject.toml` with console script `depguard`
+7. Screenshot at `docs/screenshots/depguard-scan.png`
+8. Stress tests removed — production CLI only
+9. Slack integration lives in **separate repo** — do not add Slack code here
 
 ### What not to do
 
 - Do not commit `depguard-slack/` into this repo (it is gitignored)
-- Do not use tag `v1.0.0` for installs — use `v1.0.1` (has `depguard.py`)
+- Do not use old tags for installs — use `v1.1.0`
 - Do not re-add stress test fixtures to this repo unless explicitly requested
 
 ### Related repo

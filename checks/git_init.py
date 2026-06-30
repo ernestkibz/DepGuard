@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from checks.base import CheckResult, Status
+from checks.detection import ProjectContext
 
 
-def check_git_init(project: Path) -> CheckResult:
+def check_git_init(context: ProjectContext) -> CheckResult:
     name = "Git Initialized"
+    project = context.project
 
     if (project / ".git").exists():
         return CheckResult(

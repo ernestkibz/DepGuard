@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from checks.base import (
     CheckResult,
     Status,
@@ -12,10 +10,15 @@ from checks.base import (
     docker_install_fix,
     run_command,
 )
+from checks.detection import ProjectContext
 
 
-def check_docker(project: Path) -> CheckResult:
+def check_docker(context: ProjectContext) -> CheckResult | None:
     name = "Docker Available"
+    if not context.has_infrastructure("Docker"):
+        return None
+
+    project = context.project
     dockerfile = project / "Dockerfile"
 
     if not dockerfile.is_file():
@@ -24,7 +27,7 @@ def check_docker(project: Path) -> CheckResult:
             return CheckResult(
                 name=name,
                 status=Status.PASS,
-                message="No Dockerfile found — Docker not required.",
+                message="Docker support is detected, but no Dockerfile was found.",
             )
 
     if not command_exists("docker"):

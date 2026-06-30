@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import subprocess
-from pathlib import Path
 
 from checks.base import (
     CheckResult,
@@ -19,9 +18,11 @@ from checks.base import (
     satisfies_minimum,
     version_to_string,
 )
+from checks.detection import ProjectContext
 
 
-def _required_from_nvmrc(project: Path) -> tuple[int, int, int] | None:
+def _required_from_nvmrc(context: ProjectContext) -> tuple[int, int, int] | None:
+    project = context.project
     nvmrc = project / ".nvmrc"
     if not nvmrc.is_file():
         return None
@@ -38,7 +39,8 @@ def _required_from_nvmrc(project: Path) -> tuple[int, int, int] | None:
     return parse_version_numbers(content)
 
 
-def _required_from_package_json(project: Path) -> tuple[int, int, int] | None:
+def _required_from_package_json(context: ProjectContext) -> tuple[int, int, int] | None:
+    project = context.project
     package_json = project / "package.json"
     if not package_json.is_file():
         return None
@@ -55,9 +57,12 @@ def _required_from_package_json(project: Path) -> tuple[int, int, int] | None:
     return extract_minimum_version(str(node_spec))
 
 
-def check_node_version(project: Path) -> CheckResult:
+def check_node_version(context: ProjectContext) -> CheckResult | None:
     name = "Node Version"
-    required = _required_from_nvmrc(project) or _required_from_package_json(project)
+    if not context.has_language("node"):
+        return None
+
+    required = _required_from_nvmrc(context) or _required_from_package_json(context)
 
     if required is None:
         return CheckResult(
@@ -66,8 +71,9 @@ def check_node_version(project: Path) -> CheckResult:
             message="No Node.js version constraint found (.nvmrc or package.json engines).",
         )
 
+    required_text = version_to_string(required)
+
     if not command_exists("node"):
-        required_text = version_to_string(required)
         return CheckResult(
             name=name,
             status=Status.FAIL,
@@ -76,7 +82,7 @@ def check_node_version(project: Path) -> CheckResult:
         )
 
     try:
-        result = run_command(["node", "--version"], cwd=project, timeout=10)
+        result = run_command(["node", "--version"], cwd=context.project, timeout=10)
     except (OSError, subprocess.TimeoutExpired) as exc:
         return CheckResult(
             name=name,
@@ -94,7 +100,6 @@ def check_node_version(project: Path) -> CheckResult:
         )
 
     current = parse_version_numbers(result.stdout.strip())
-    required_text = version_to_string(required)
     current_text = version_to_string(current)
 
     if satisfies_minimum(current, required):

@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from checks import ALL_CHECKS, CheckResult, Status, __version__
+from checks import ALL_CHECKS, CheckResult, Status, __version__, detect_project
 
 
 def render_result(console: Console, result: CheckResult) -> None:
@@ -34,11 +34,27 @@ def render_result(console: Console, result: CheckResult) -> None:
         console.print(f"   [dim]Fix:[/dim] [cyan]{result.fix_command}[/cyan]")
 
 
+def describe_detected_stack(project_context) -> str:
+    parts: list[str] = []
+    if project_context.languages:
+        parts.append("Languages: " + ", ".join(project_context.languages))
+    if project_context.frameworks:
+        parts.append("Frameworks: " + ", ".join(project_context.frameworks))
+    if project_context.infrastructure:
+        parts.append("Infrastructure: " + ", ".join(project_context.infrastructure))
+    if project_context.databases:
+        parts.append("Databases: " + ", ".join(project_context.databases))
+    return "\n".join(parts) if parts else "No specific technology markers detected."
+
+
 def run_checks(project: Path) -> list[CheckResult]:
+    project_context = detect_project(project)
     results: list[CheckResult] = []
     for display_name, check_fn in ALL_CHECKS:
         try:
-            results.append(check_fn(project))
+            result = check_fn(project_context)
+            if result is not None:
+                results.append(result)
         except Exception as exc:  # noqa: BLE001 — surface unexpected check failures
             results.append(
                 CheckResult(
@@ -117,9 +133,12 @@ def main(argv: list[str] | None = None) -> int:
         console.print(f"[bold red]Error:[/bold red] Path is not a directory: {project}")
         return 1
 
+    project_context = detect_project(project)
     console.print(
         Panel.fit(
-            f"[bold]DepGuard[/bold]\nScanning: [cyan]{project}[/cyan]",
+            "[bold]DepGuard[/bold]\n"
+            f"Scanning: [cyan]{project}[/cyan]\n"
+            f"{describe_detected_stack(project_context)}",
             border_style="blue",
         )
     )
