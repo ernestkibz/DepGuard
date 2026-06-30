@@ -8,14 +8,27 @@ Works on **Windows, macOS, and Linux** — on any project with standard config f
 
 Repository: **[github.com/ernestkibz/DepGuard](https://github.com/ernestkibz/DepGuard)**
 
-> **Setup guide:** See [setup.md](setup.md) for installing from GitHub, adding DepGuard to your project, CI, and Python API usage.
+> **Setup guide:** [setup.md](setup.md) — install, CI, Python API, and handoff notes for the next developer.
+
+> **Slack bot (separate repo):** [github.com/ernestkibz/depguard-slack](https://github.com/ernestkibz/depguard-slack) — not part of this git repo. Local copy may exist at `depguard-slack/` (gitignored).
+
+---
+
+## Repositories (important)
+
+| Repo | GitHub | What it is |
+|------|--------|------------|
+| **DepGuard** | [ernestkibz/DepGuard](https://github.com/ernestkibz/DepGuard) | This repo — CLI only |
+| **DepGuard for Slack** | [ernestkibz/depguard-slack](https://github.com/ernestkibz/depguard-slack) | Slack bot + MCP — separate git history |
+
+Current release: **`v1.0.1`** · Entry point: **`depguard.py`**
 
 ---
 
 ## Quick install
 
 ```bash
-pip install "git+https://github.com/ernestkibz/DepGuard.git"
+pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.0.1"
 depguard /path/to/your/project
 ```
 
@@ -177,8 +190,20 @@ Register it in `checks/__init__.py` inside `ALL_CHECKS`.
 
 ## Integrations
 
-- [DepGuard for Slack](https://github.com/ernestkibz/depguard-slack) — Scan any public GitHub repo directly inside Slack with `/depguard`
-- Local copy: [`depguard-slack/`](depguard-slack/) — Slack bot + MCP server (separate git repo)
+- [DepGuard for Slack](https://github.com/ernestkibz/depguard-slack) — `/depguard` slash command in Slack; setup in [depguard-slack/setup.md](https://github.com/ernestkibz/depguard-slack/blob/main/setup.md)
+- Local workspace copy: `depguard-slack/` (separate `.git`, ignored by this repo)
+
+---
+
+## Handoff for next AI / developer
+
+Read **[setup.md](setup.md)** for full context. Summary:
+
+- **This repo** = CLI only (`depguard.py`, `checks/`, `pyproject.toml`)
+- **Do not** commit Slack bot code here — use [depguard-slack](https://github.com/ernestkibz/depguard-slack)
+- **Install tag:** `@v1.0.1` (not `v1.0.0` — old tag has `doctor.py`)
+- **Extend checks:** add module in `checks/`, register in `checks/__init__.py` → `ALL_CHECKS`
+- Stress tests were removed intentionally; keep this repo production-focused
 
 ---
 
