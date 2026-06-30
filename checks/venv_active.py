@@ -47,4 +47,8 @@ def check_venv_active(context: ProjectContext) -> CheckResult | None:
         status=Status.WARN,
         message="Python project detected but no virtual environment is active.",
         fix_command=venv_create_and_activate_fix(),
+        suggestion=(
+            "Activate a project-specific virtual environment before installing packages or "
+            "running tests so dependencies do not leak into the global Python environment."
+        ),
     )

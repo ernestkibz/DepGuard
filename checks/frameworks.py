@@ -86,7 +86,15 @@ def check_framework_configuration(context: ProjectContext) -> CheckResult | None
         return CheckResult(
             name=name,
             status=Status.WARN,
-            message="Frameworks detected but some common framework files are missing: " + "; ".join(missing),
+            message=(
+                "DepGuard detected framework signals, but could not find some common framework markers. "
+                "This can be normal in monorepos, starter templates, examples, or custom layouts: "
+                + "; ".join(missing)
+            ),
+            suggestion=(
+                "Confirm the framework actually lives in this repo path, then check whether the real "
+                "app root is a subdirectory, monorepo package, or custom project layout."
+            ),
         )
 
     return CheckResult(

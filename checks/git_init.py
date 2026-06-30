@@ -22,4 +22,8 @@ def check_git_init(context: ProjectContext) -> CheckResult:
         status=Status.FAIL,
         message="Git is not initialized in this project folder.",
         fix_command="git init",
+        suggestion=(
+            "Initialize Git before the first commit, or clone the canonical repository again "
+            "if this folder was expected to already be version-controlled."
+        ),
     )

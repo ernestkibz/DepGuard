@@ -45,6 +45,7 @@ class CheckResult:
     status: Status
     message: str
     fix_command: str | None = None
+    suggestion: str | None = None
 
 
 def read_text(path: Path) -> str:

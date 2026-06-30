@@ -1,234 +1,202 @@
 # DepGuard
 
-**Scan any project folder. Diagnose setup problems. Get exact fix commands.**
+DepGuard is the core scan engine. It inspects a local project folder, detects what stack is actually present, and runs only the checks that make sense for that project.
 
-DepGuard is a cross-platform Python CLI that inspects a local project, detects the stacks that are actually present, and runs only the relevant checks for that project. Each issue comes with a copy-paste terminal command tailored to your operating system.
+Repository: https://github.com/ernestkibz/DepGuard
 
-Works on **Windows, macOS, and Linux** — on any project with standard config files.
+Separate Slack repo: https://github.com/ernestkibz/depguard-slack
 
-Repository: **[github.com/ernestkibz/DepGuard](https://github.com/ernestkibz/DepGuard)**
-
-> **Setup guide:** [setup.md](setup.md) — install, CI, Python API, and handoff notes for the next developer.
-
-> **Slack bot (separate repo):** [github.com/ernestkibz/depguard-slack](https://github.com/ernestkibz/depguard-slack) — not part of this git repo. Local copy may exist at `depguard-slack/` (gitignored).
+Important: `DepGuard` and `depguard-slack` are two separate git repositories. A local `depguard-slack/` folder may sit beside this repo for convenience, but it has its own `.git` history and should be committed separately.
 
 ---
 
-## Repositories (important)
+## README 1 - For Users
 
-| Repo | GitHub | What it is |
-|------|--------|------------|
-| **DepGuard** | [ernestkibz/DepGuard](https://github.com/ernestkibz/DepGuard) | This repo — CLI only |
-| **DepGuard for Slack** | [ernestkibz/depguard-slack](https://github.com/ernestkibz/depguard-slack) | Slack bot + MCP — separate git history |
+### What DepGuard does
 
-Current release: **`v1.1.0`** · Entry point: **`depguard.py`**
+DepGuard is a Python CLI that:
 
----
+- scans any local project folder
+- detects languages, frameworks, infrastructure, and database signals
+- checks only the relevant setup rules for that project
+- prints exact fix commands and situation-aware suggestions when something is missing or broken
 
-## Quick install
+Supported detection includes:
+
+- Languages: Python, Node.js, Java, Go, .NET, PHP, Rust, Ruby
+- Frameworks: React, Next.js, Django, Flask, FastAPI, Spring Boot, ASP.NET, Laravel, Ruby on Rails
+- Infrastructure: Docker, Docker Compose, Kubernetes, GitHub Actions, Terraform
+- Databases: PostgreSQL, MySQL, MongoDB, Redis, Oracle Database
+
+### Quick start
 
 ```bash
 pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.0"
-depguard /path/to/your/project
+depguard /path/to/project
 ```
 
----
-
-## Features
-
-DepGuard now detects and routes checks for these stacks:
-
-- **Languages:** Python, Node.js, Java, Go, .NET / C#, PHP, Rust, Ruby
-- **Frameworks:** React, Next.js, Django, Flask, FastAPI, Spring Boot, ASP.NET, Laravel, Ruby on Rails
-- **Infrastructure:** Docker, Docker Compose, Kubernetes, GitHub Actions, Terraform
-- **Databases:** PostgreSQL, MySQL, MongoDB, Redis, Oracle Database
-- **Dependency sensing:** compares known code imports and usage against manifest declarations instead of relying only on config files
-
-Representative checks include:
-
-| Check family | What it validates |
-|-------------|-------------------|
-| Runtime versions | Matches project constraints for Python, Node.js, Java, Go, .NET, PHP, Rust, and Ruby |
-| Dependency alignment | Detects known dependencies from source code and verifies they are declared in manifests |
-| Framework configuration | Validates common framework entry/config markers only when the framework is detected |
-| Infrastructure | Detects Docker, Compose, Kubernetes, GitHub Actions, and Terraform and checks local tooling where relevant |
-| Database configuration | Detects supported databases and looks for common connection/config markers |
-| Project hygiene | Git initialized, env-file presence, Node modules, Python venv, and requirements installability |
-
-Output uses [Rich](https://github.com/Textualize/rich) for color-coded results:
-
-- ✅ **Green** — check passed
-- ❌ **Red** — check failed + exact fix command
-- ⚠️ **Yellow** — warning + suggested command
-
-Final score: **`X/Y relevant checks passed`**
-
----
-
-## Requirements
-
-- Python 3.10 or newer
-- pip
-
-Optional (only when scanning projects that use them):
-
-- Node.js — for Node version and `node_modules` checks
-- Docker — when the target project contains a `Dockerfile`
-- Git — for the Git initialized check
-
----
-
-## Usage
-
-```bash
-depguard                  # scan current directory
-depguard /path/to/project # scan any folder
-depguard --version
-```
-
-After cloning the repo locally:
+Or run from a local clone:
 
 ```bash
 git clone https://github.com/ernestkibz/DepGuard.git
 cd DepGuard
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
 pip install -e .
 depguard .
 ```
 
-See [setup.md](setup.md) for Makefile scripts, `requirements-dev.txt`, GitHub Actions, and programmatic use.
+### Command usage
+
+```bash
+depguard
+depguard /path/to/project
+depguard --version
+```
+
+### How to read the results
+
+- `PASS` means DepGuard found enough evidence that the check is satisfied.
+- `FAIL` means DepGuard found a concrete setup problem or could not run a required dependency/tool check.
+- `WARN` means DepGuard found a signal worth reviewing, but not always hard proof of a real production problem.
+
+This distinction matters in grey-area cases.
+
+Examples:
+
+- If source code imports a package but the manifest does not declare it, DepGuard warns that the dependency may be used. That could still be optional code, test code, example code, or an adapter that is not part of the deployed path.
+- If DepGuard sees Oracle-related packages or code markers, do not automatically assume the project definitely uses Oracle Database in production. Read it as possible Oracle-related usage detected until config or runtime evidence confirms it.
+- If a framework is detected but common files are missing, that can also be normal in monorepos, starter templates, generated examples, or custom layouts.
 
 ### Detection-first behavior
 
-DepGuard does not run every possible check on every repository. It first builds a project context from:
+DepGuard builds a `ProjectContext` before it runs checks. It uses:
 
-- manifest files such as `pom.xml`, `go.mod`, `.csproj`, `composer.json`, `Cargo.toml`, `Gemfile`, `pyproject.toml`, and `package.json`
-- framework and infrastructure markers such as `next.config.js`, `manage.py`, `Dockerfile`, Compose files, `.github/workflows`, and `.tf`
-- known code imports and usage patterns across supported languages
+- manifests such as `pyproject.toml`, `package.json`, `pom.xml`, `go.mod`, `.csproj`, `composer.json`, `Cargo.toml`, `Gemfile`
+- framework and infrastructure markers such as `next.config.js`, `manage.py`, `Dockerfile`, Compose files, GitHub Actions workflows, and Terraform files
+- known source imports and usage patterns
 
 That context decides which checks appear in the report.
 
 ### Example output
 
-```
-╭──────────────────────────────────────────────╮
-│ DepGuard                                     │
-│ Scanning: C:\projects\my-app                 │
-╰──────────────────────────────────────────────╯
+```text
+[PASS] Python Version - Python 3.11.8 satisfies required 3.11.0.
+[FAIL] Node Modules - package.json exists but node_modules is missing.
+       Suggestion: Run the repository's package manager from the project root, let it restore dependencies from the lockfile, and then rerun the app build or tests.
+       Fix: npm install
+[WARN] Database Configuration - DepGuard found database-related dependencies or code signals, but could not confirm common connection markers for: Oracle Database. This may be expected if configuration lives in deployment variables, a secrets manager, optional adapters, or non-standard config files.
+       Suggestion: Verify the real runtime database from environment variables, secrets management, deployment config, or connection factory code before treating this as a confirmed production dependency.
 
-✅ Python Version — Python 3.11.8 satisfies required 3.11.0.
-✅ Node Version — Node.js 20.11.0 satisfies required 20.0.0.
-❌ Requirements Installable — requirements.txt has install issues: ...
-   Fix: python -m pip install -r requirements.txt
-❌ Node Modules — package.json exists but node_modules is missing.
-   Fix: npm install
-⚠️ Environment File — .env is missing but .env.example exists.
-   Fix: Copy-Item ".env.example" ".env"
-✅ Docker Available — No Dockerfile found — Docker not required.
-❌ Git Initialized — Git is not initialized in this project folder.
-   Fix: git init
-⚠️ Virtual Environment — Python project detected but no virtual environment is active.
-   Fix: python -m venv .venv && .venv\Scripts\activate
-
-Final score: 4/8 checks passed
+Final score: 2/3 checks passed
 ```
 
-Exit code is `0` when all relevant checks pass, `1` otherwise.
+Exit code is `0` when all relevant checks pass and `1` when any relevant check fails or warns.
+
+### Screenshots
+
+![DepGuard scan output](docs/screenshots/depguard-scan.png)
 
 ---
 
-## Screenshots
+## README 2 - For Builder/Owner
 
-![DepGuard scanning a real project — pass, fail, and warn checks with fix commands](docs/screenshots/depguard-scan.png)
+### What this repo is
 
----
+This repo is the core engine only.
 
-## Project structure
+- CLI entry point: `depguard.py`
+- Check modules: `checks/`
+- Packaging: `pyproject.toml`
+- Current release line documented here: `v1.1.0`
 
-```
-DepGuard/
-├── depguard.py            # CLI entry point
-├── checks/
-│   ├── __init__.py        # Check registry and version
-│   ├── base.py            # Shared types, OS helpers, fix commands
-│   ├── detection.py       # Project context, tech detection, dependency sensing
-│   ├── runtime_versions.py
-│   ├── dependency_alignment.py
-│   ├── frameworks.py
-│   ├── infrastructure.py
-│   ├── databases.py
-│   └── ...                # Python/Node env and project hygiene checks
-├── pyproject.toml         # Package metadata and depguard console script
-├── setup.md               # Install from GitHub, CI, project integration
-├── requirements.txt
-├── LICENSE
-└── README.md
-```
+Slack-specific behavior does not belong in this repo. Slack message formatting, slash commands, MCP transport, and Railway deployment live in `depguard-slack`.
 
----
-
-## Architecture
+### How the core works
 
 ```text
 depguard.py
-    └── checks.detect_project(project) -> ProjectContext
-            ├── detected languages / frameworks / infrastructure / databases
-            ├── declared dependencies from manifests
-            └── inferred dependencies from source imports
-    └── checks.ALL_CHECKS
-            └── check_*(context: ProjectContext) -> CheckResult | None
+  -> detect_project(project) -> ProjectContext
+  -> run ALL_CHECKS against that ProjectContext
+  -> render PASS / FAIL / WARN output with fix commands
 ```
 
-Design principles:
+Key design choices:
 
-- **Registry pattern** — add a check function and register it in `ALL_CHECKS`
-- **Context-driven checks** — each check receives a `ProjectContext` and skips itself when not relevant
-- **Dependency sensing** — known frameworks and services can be inferred from code, not just declarations
-- **Centralized platform logic** — fix commands live in `checks/base.py` so every check stays consistent across OSes
-- **Graceful degradation** — missing config files pass with an informational message
-- **UTF-8 everywhere** — Windows console is reconfigured on startup; file reads try multiple encodings
+- detection-driven architecture instead of running every check on every repo
+- dependency sensing from manifests and source imports
+- OS-specific fix commands centralized in `checks/base.py`
+- checks return `CheckResult | None` so irrelevant checks quietly skip themselves
+- nested directories with their own `.git` folders are ignored during scans
 
----
+### Grey-area communication model
 
-## Extending
+The wording upgrade in this repo is intentional. Some findings are evidence-based warnings, not hard confirmation.
 
-Add a new check in `checks/`:
+Current ambiguity-sensitive checks are:
 
-```python
-from checks.base import CheckResult, Status
-from checks.detection import ProjectContext
+- `Dependency Alignment`
+- `Framework Configuration`
+- `Database Configuration`
 
-def check_my_thing(context: ProjectContext) -> CheckResult | None:
-    return CheckResult(
-        name="My Check",
-        status=Status.PASS,
-        message="Everything looks good.",
-    )
-```
+The language now aims to separate:
 
-Register it in `checks/__init__.py` inside `ALL_CHECKS`.
+- confirmed failures
+- likely but unconfirmed usage
+- common alternative explanations such as optional adapters, examples, tests, monorepo layouts, secrets managers, and custom config paths
 
----
+This is especially important for foreign or complex repos where a team may over-read a signal as certainty.
 
-## Integrations
+### Project story
 
-- [DepGuard for Slack](https://github.com/ernestkibz/depguard-slack) — `/depguard` slash command in Slack; setup in [depguard-slack/setup.md](https://github.com/ernestkibz/depguard-slack/blob/main/setup.md)
-- Local workspace copy: `depguard-slack/` (separate `.git`, ignored by this repo)
+The build path was:
 
----
+1. Start with `DepGuard` as the reusable core CLI for local project scanning.
+2. Expand detection so the engine can sense stacks from manifests and source code, not manifests alone.
+3. Add richer stack coverage across languages, frameworks, infrastructure, and databases.
+4. Improve warning language so ambiguous signals are communicated carefully.
+5. Build `depguard-slack` as a separate wrapper repo for Slack and MCP use.
 
-## Handoff for next AI / developer
+### Relationship to `depguard-slack`
 
-Read **[setup.md](setup.md)** for full context. Summary:
+`depguard-slack` consumes this engine as a dependency and presents results inside Slack. During local development, the Slack repo can prefer a parent-folder checkout of this repo so unreleased engine changes can be exercised before the next tag.
 
-- **This repo** = CLI only (`depguard.py`, `checks/`, `pyproject.toml`)
-- **Do not** commit Slack bot code here — use [depguard-slack](https://github.com/ernestkibz/depguard-slack)
-- **Install tag:** `@v1.1.0`
-- **Extend checks:** add module in `checks/`, register in `checks/__init__.py` → `ALL_CHECKS`, and update `checks/detection.py` if the check depends on detected tech
-- **Slack integration:** `depguard-slack` can consume the richer check set once its dependency is bumped to this release
-- Stress tests were removed intentionally; keep this repo production-focused
+Keep the repo boundary strict:
+
+- core scanning logic here
+- Slack transport and formatting there
+- separate git histories for each repo
+
+### Typical files to edit
+
+- `checks/detection.py` for tech detection and source-signal inference
+- `checks/__init__.py` for check registration and version
+- `checks/base.py` for shared helpers and fix commands
+- individual `checks/*.py` modules for targeted logic
+- `depguard.py` for CLI rendering and summary behavior
+
+### Extending the engine
+
+1. Add or update detection rules if the new check depends on stack discovery.
+2. Implement the check in `checks/`.
+3. Register it in `checks/__init__.py`.
+4. Add focused tests in `tests/` when the behavior is non-trivial.
+5. Keep user wording careful when the check relies on indirect signals.
+
+### Handoff notes
+
+- Do not move Slack bot code into this repo.
+- Do not assume a detected database marker proves production usage.
+- Keep release tags in sync with docs and downstream `depguard-slack` dependency bumps.
+- If demoing the system, common examples include scanning `DepGuard` itself or the Slack demo target repo used in conversations such as `chaosapp-demo`.
+
+For install, CI, Python API, release notes, and builder workflow, see [setup.md](setup.md).
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).

@@ -42,8 +42,13 @@ def check_dependency_alignment(context: ProjectContext) -> CheckResult | None:
             name=name,
             status=Status.WARN,
             message=(
-                "Code usage suggests dependencies that are not declared in manifests: "
+                "Code-level signals suggest these dependencies may be used, but DepGuard could not match them in common manifests. "
+                "Review optional adapters, examples, test-only code, or custom package layouts before treating this as a confirmed problem: "
                 + "; ".join(missing)
+            ),
+            suggestion=(
+                "Compare imported packages with the project's declared dependencies, then ignore signals "
+                "that belong only to tests, examples, or optional integrations."
             ),
         )
 

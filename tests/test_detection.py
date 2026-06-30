@@ -7,8 +7,12 @@ from unittest.mock import patch
 
 import depguard
 from checks import CheckResult, Status
+from checks.databases import check_database_configuration
 from checks.dependency_alignment import check_dependency_alignment
 from checks.detection import detect_project
+from checks.frameworks import check_framework_configuration
+from checks.node_version import check_node_version
+from checks.runtime_versions import check_rust_version
 
 
 class DetectionTests(unittest.TestCase):
@@ -62,6 +66,65 @@ class DetectionTests(unittest.TestCase):
 
             self.assertIn("go", context.languages)
             self.assertIn("PostgreSQL", context.databases)
+
+    def test_ambiguity_messages_use_careful_language(self) -> None:
+        with self.make_project() as temp_dir:
+            root = Path(temp_dir)
+            self.write(root, "package.json", '{"dependencies": {"next": "14.2.0"}}')
+            self.write(root, "src/index.ts", "import oracledb from 'oracledb';\nimport next from 'next';\n")
+
+            context = detect_project(root)
+
+            dep_result = check_dependency_alignment(context)
+            framework_result = check_framework_configuration(context)
+            database_result = check_database_configuration(context)
+
+            self.assertIsNotNone(dep_result)
+            self.assertIsNotNone(framework_result)
+            self.assertIsNotNone(database_result)
+            assert dep_result is not None
+            assert framework_result is not None
+            assert database_result is not None
+            self.assertIn("may be used", dep_result.message)
+            self.assertIsNotNone(dep_result.suggestion)
+            self.assertIn("custom layouts", framework_result.message)
+            self.assertIsNotNone(framework_result.suggestion)
+            self.assertIn("could not confirm common connection markers", database_result.message)
+            self.assertIsNotNone(database_result.suggestion)
+
+    def test_rust_nightly_channel_does_not_become_zero_version(self) -> None:
+        with self.make_project() as temp_dir:
+            root = Path(temp_dir)
+            self.write(root, "Cargo.toml", '[package]\nname = "demo"\nversion = "0.1.0"\n')
+            self.write(root, "rust-toolchain.toml", '[toolchain]\nchannel = "nightly"\n')
+            self.write(root, "src/main.rs", "fn main() {}\n")
+
+            context = detect_project(root)
+            result = check_rust_version(context)
+
+            self.assertIsNotNone(result)
+            assert result is not None
+            self.assertEqual(result.status, Status.PASS)
+            self.assertIn("No Rust toolchain constraint found", result.message)
+
+    def test_version_failures_include_suggestion_text(self) -> None:
+        with self.make_project() as temp_dir:
+            root = Path(temp_dir)
+            self.write(
+                root,
+                "package.json",
+                '{\n  "name": "demo",\n  "engines": {"node": ">=99.0.0"}\n}\n',
+            )
+            self.write(root, "src/index.js", "console.log('hi')\n")
+
+            context = detect_project(root)
+            result = check_node_version(context)
+
+            self.assertIsNotNone(result)
+            assert result is not None
+            self.assertEqual(result.status, Status.FAIL)
+            self.assertIsNotNone(result.suggestion)
+            self.assertIn("Switch this project to Node.js", result.suggestion)
 
     def test_run_checks_uses_project_context_and_skips_none_results(self) -> None:
         with self.make_project() as temp_dir:

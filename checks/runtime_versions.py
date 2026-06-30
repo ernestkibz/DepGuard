@@ -37,6 +37,7 @@ def _evaluate_runtime(
     missing_message: str,
     fix_command: str,
 ) -> CheckResult:
+    runtime_label = name.removesuffix(" Version")
     if required is None:
         return CheckResult(name=name, status=Status.PASS, message=missing_message)
 
@@ -45,8 +46,12 @@ def _evaluate_runtime(
         return CheckResult(
             name=name,
             status=Status.FAIL,
-            message=f"{name.split()[0]} is not installed, but {required_text} is required.",
+            message=f"{runtime_label} is not installed, but {required_text} is required.",
             fix_command=fix_command,
+            suggestion=(
+                f"Install or switch to {runtime_label} {required_text} or newer, "
+                "then reopen your shell and rerun DepGuard."
+            ),
         )
 
     try:
@@ -57,14 +62,22 @@ def _evaluate_runtime(
             status=Status.FAIL,
             message=f"Could not read {name.lower()}: {exc}",
             fix_command=fix_command,
+            suggestion=(
+                f"Confirm `{executable}` works in this shell and points to the expected "
+                f"{runtime_label} installation before rerunning DepGuard."
+            ),
         )
 
     if result.returncode != 0:
         return CheckResult(
             name=name,
             status=Status.FAIL,
-            message=f"{name.split()[0]} is installed but version detection failed.",
+            message=f"{runtime_label} is installed but version detection failed.",
             fix_command=fix_command,
+            suggestion=(
+                f"Run `{executable}` manually in this shell, fix any PATH or startup issues, "
+                "and then rerun DepGuard."
+            ),
         )
 
     current = parse_version_numbers(f"{result.stdout}\n{result.stderr}")
@@ -73,14 +86,18 @@ def _evaluate_runtime(
         return CheckResult(
             name=name,
             status=Status.PASS,
-            message=f"{name.split()[0]} {current_text} satisfies required {required_text}.",
+            message=f"{runtime_label} {current_text} satisfies required {required_text}.",
         )
 
     return CheckResult(
         name=name,
         status=Status.FAIL,
-        message=f"{name.split()[0]} {current_text} does not satisfy required {required_text}.",
+        message=f"{runtime_label} {current_text} does not satisfy required {required_text}.",
         fix_command=fix_command,
+        suggestion=(
+            f"Switch this project to {runtime_label} {required_text} or newer, "
+            "then rerun installs, builds, and DepGuard in the updated shell."
+        ),
     )
 
 
@@ -182,14 +199,20 @@ def _required_rust_version(context: ProjectContext) -> tuple[int, int, int] | No
             content = ""
         match = re.search(r'channel\s*=\s*["\']([^"\']+)["\']', content)
         if match:
-            return parse_version_numbers(match.group(1))
+            channel = match.group(1).strip()
+            if re.match(r"^\d+(?:\.\d+){0,2}$", channel):
+                return parse_version_numbers(channel)
+            return None
 
     rust_toolchain = context.project / "rust-toolchain"
     if rust_toolchain.is_file():
         try:
-            return parse_version_numbers(first_line(read_text(rust_toolchain)))
+            channel = first_line(read_text(rust_toolchain)).strip()
         except (RuntimeError, IndexError):
             return None
+        if re.match(r"^\d+(?:\.\d+){0,2}$", channel):
+            return parse_version_numbers(channel)
+        return None
 
     cargo = context.project / "Cargo.toml"
     if cargo.is_file():

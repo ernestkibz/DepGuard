@@ -56,4 +56,10 @@ def check_infrastructure_stack(context: ProjectContext) -> CheckResult | None:
         status=status,
         message="; ".join(messages),
         fix_command=" && ".join(dict.fromkeys(fix_commands)) or None,
+        suggestion=(
+            "Install the local tooling you actually need to validate or operate these files. "
+            "If some infrastructure only runs in CI or production, confirm whether local binaries are required."
+            if status is Status.WARN
+            else "Infrastructure markers look consistent with the tools currently available on this machine."
+        ),
     )

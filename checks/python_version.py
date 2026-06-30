@@ -89,4 +89,8 @@ def check_python_version(context: ProjectContext) -> CheckResult | None:
         status=Status.FAIL,
         message=f"Python {current_text} does not satisfy required {required_text}.",
         fix_command=fix,
+        suggestion=(
+            f"Use Python {required_text} or newer for this project, then recreate or reactivate "
+            "the project's virtual environment before rerunning installs and tests."
+        ),
     )

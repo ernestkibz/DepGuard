@@ -1,43 +1,24 @@
 # DepGuard Setup Guide
 
-Install and run [DepGuard](https://github.com/ernestkibz/DepGuard) on any machine (Windows, macOS, Linux) and wire it into your own projects.
+This file is split into two tracks:
+
+- `Setup 1` is for people installing and using DepGuard.
+- `Setup 2` is for you as the builder/owner maintaining the engine and its relationship to `depguard-slack`.
+
+Remember: `DepGuard` and `depguard-slack` are separate git repositories.
 
 ---
 
-## Two separate Git repositories
+## Setup 1 - Install and Use DepGuard
 
-DepGuard and DepGuard for Slack are **different repos**. Do not merge them.
-
-| Project | GitHub | Purpose |
-|---------|--------|---------|
-| **DepGuard** (this repo) | [github.com/ernestkibz/DepGuard](https://github.com/ernestkibz/DepGuard) | CLI — detect the stack in a local folder and run relevant checks |
-| **DepGuard for Slack** | [github.com/ernestkibz/depguard-slack](https://github.com/ernestkibz/depguard-slack) | Slack bot + MCP server — scan public GitHub repos from Slack |
-
-- **Current release tag:** `v1.1.0` (entry point is `depguard.py`, not `doctor.py`)
-- **Local workspace note:** You may have `depguard-slack/` as a sibling folder for convenience. It is listed in this repo's `.gitignore` and has its **own** `.git` — commit Slack work only in the depguard-slack repo.
-
-Slack setup, Railway deployment, and MCP integration: see [depguard-slack/setup.md](https://github.com/ernestkibz/depguard-slack/blob/main/setup.md) (or `depguard-slack/setup.md` locally).
-
----
-
-## Quick start (install from GitHub)
-
-No clone required — install directly with pip:
+### Option A: install directly from GitHub
 
 ```bash
 pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.0"
+depguard /path/to/project
 ```
 
-Then scan any project folder:
-
-```bash
-depguard
-depguard /path/to/your/project
-```
-
----
-
-## Install from a clone
+### Option B: install from a clone
 
 ```bash
 git clone https://github.com/ernestkibz/DepGuard.git
@@ -45,102 +26,39 @@ cd DepGuard
 python -m venv .venv
 ```
 
-Activate the virtual environment:
+Activate the environment:
 
 ```bash
-# Windows (PowerShell)
+# Windows PowerShell
 .venv\Scripts\activate
 
 # macOS / Linux
 source .venv/bin/activate
 ```
 
-Install DepGuard:
+Install the package:
 
 ```bash
-# Recommended — adds the depguard command to your PATH (inside the venv)
 pip install -e .
-
-# Minimal — run without installing the command
-pip install -r requirements.txt
-python depguard.py
 ```
 
 Verify:
 
 ```bash
 depguard --version
-# DepGuard 1.1.0
 ```
 
----
-
-## Use DepGuard in your project
-
-DepGuard scans **any** folder you point it at. You do not need to copy DepGuard into your repo — install it once, then run it against your project path.
-
-### Scan your project from the terminal
+### Run a scan
 
 ```bash
-cd /path/to/your/app
+depguard
 depguard .
+depguard /path/to/project
 ```
 
-Or from anywhere:
-
-```bash
-depguard /path/to/your/app
-```
-
-Exit code `0` means all relevant checks passed; `1` means at least one failed or warned.
-
-### What DepGuard detects now
-
-- **Languages:** Python, Node.js, Java, Go, .NET / C#, PHP, Rust, Ruby
-- **Frameworks:** React, Next.js, Django, Flask, FastAPI, Spring Boot, ASP.NET, Laravel, Ruby on Rails
-- **Infrastructure:** Docker, Docker Compose, Kubernetes, GitHub Actions, Terraform
-- **Databases:** PostgreSQL, MySQL, MongoDB, Redis, Oracle Database
-
-DepGuard first builds a project context from manifests, framework markers, infrastructure files, and known code imports. It then runs only the checks that apply to that project.
-
-### Add to your project's `Makefile`
-
-```makefile
-.PHONY: setup-check
-setup-check:
-	depguard .
-```
-
-### Add to `package.json` scripts
-
-```json
-{
-  "scripts": {
-    "setup-check": "depguard ."
-  }
-}
-```
-
-### Pin DepGuard as a dev dependency
-
-```text
-# requirements-dev.txt
-git+https://github.com/ernestkibz/DepGuard.git@v1.1.0
-```
-
-Or in `pyproject.toml`:
-
-```toml
-[project.optional-dependencies]
-dev = ["depguard @ git+https://github.com/ernestkibz/DepGuard.git@v1.1.0"]
-```
-
----
-
-## CI integration (GitHub Actions)
+### Add DepGuard to CI
 
 ```yaml
-# .github/workflows/depguard.yml
 name: DepGuard
 
 on:
@@ -160,105 +78,167 @@ jobs:
       - run: depguard .
 ```
 
----
+### Add DepGuard to a project workflow
 
-## Call DepGuard from Python
+`Makefile`:
+
+```makefile
+.PHONY: setup-check
+setup-check:
+	depguard .
+```
+
+`package.json`:
+
+```json
+{
+  "scripts": {
+    "setup-check": "depguard ."
+  }
+}
+```
+
+### Call it from Python
 
 ```python
 from pathlib import Path
 from depguard import run_checks, score_results
 
-project = Path(".").resolve()
+project = Path('.').resolve()
 results = run_checks(project)
 passed = score_results(results)
 
+print(f"Passed: {passed}/{len(results)}")
 for result in results:
-    print(f"{result.name}: {result.status.value} — {result.message}")
-    if result.fix_command:
-        print(f"  Fix: {result.fix_command}")
+    print(result.name, result.status.value, result.message)
 ```
 
-Import individual checks:
+### Machine requirements
 
-```python
-from pathlib import Path
-from checks.requirements import check_requirements
-from checks.env_file import check_env_file
+Required:
 
-print(check_requirements(Path(".")))
+- Python 3.10+
+- pip
+
+Optional and only needed when scanning matching projects:
+
+- Node.js
+- Java
+- Go
+- .NET SDK
+- PHP
+- Rust
+- Ruby
+- Docker
+- kubectl
+- Terraform
+- Git
+
+### Interpreting warnings safely
+
+Use these reading rules with teams:
+
+- `FAIL` means a concrete issue or unmet requirement was found.
+- `WARN` means review is needed, not automatic proof of production usage.
+- Database and dependency warnings are often signal-based and can come from tests, examples, adapters, or environment-managed config.
+- Suggestions explain the safest next investigation step, while fix commands remain the copy-paste action when one is available.
+
+That wording is deliberate so teams do not overstate ambiguous findings.
+
+---
+
+## Setup 2 - Builder/Owner Workflow
+
+### Repo boundary
+
+There are two repos in this system:
+
+- `DepGuard` - core engine and CLI
+- `depguard-slack` - Slack and MCP wrapper around the core engine
+
+Do not mix their git histories. A local workspace can contain both repos side by side, but commits must stay in the correct repo.
+
+### Core architecture
+
+```text
+depguard.py
+  -> detect_project(project)
+  -> ProjectContext
+  -> ALL_CHECKS
+  -> CheckResult objects
+  -> Rich CLI rendering
 ```
 
-The Slack bot imports the same engine via `pip install depguard @ git+...@v1.1.0` in its own repo.
+Important implementation points:
 
----
+- `checks/detection.py` builds `ProjectContext`
+- source imports are used alongside manifest files for dependency sensing
+- nested directories containing their own `.git` folders are ignored
+- checks return `None` when irrelevant
+- OS-specific fix commands live in `checks/base.py`
 
-## Requirements on the machine running DepGuard
+### Releasing and downstream consumption
 
-| Tool | Required? | When |
-|------|-----------|------|
-| Python 3.10+ | Yes | Always |
-| pip | Yes | Always |
-| Node.js | No | Only if the scanned project has Node markers or source files |
-| Java | No | Only if the scanned project has `pom.xml`, `build.gradle`, or Java source |
-| Go | No | Only if the scanned project has `go.mod` or Go source |
-| .NET SDK | No | Only if the scanned project has `.csproj`, `global.json`, or C# source |
-| PHP | No | Only if the scanned project has `composer.json` or PHP source |
-| Rust | No | Only if the scanned project has `Cargo.toml` or Rust source |
-| Ruby | No | Only if the scanned project has `Gemfile` or Ruby source |
-| Docker | No | Only if the scanned project contains Docker or Compose files |
-| kubectl | No | Only if Kubernetes manifests are detected |
-| Terraform | No | Only if Terraform files are detected |
-| Git | No | Only for the Git initialized check on the target project |
+The Slack repo pins this repo by git tag in `requirements.txt`. A normal release flow is:
 
-Runtime dependency: [Rich](https://github.com/Textualize/rich) only.
+1. Make and test engine changes here.
+2. Update version metadata if needed.
+3. Tag and push the release.
+4. Bump the pinned `depguard` dependency in `depguard-slack`.
+5. Redeploy the Slack app when its dependency changes.
 
----
+### Where the communication upgrade lives
 
-## Troubleshooting
+The ambiguity-language upgrade currently centers on:
 
-**`depguard` command not found** — Run `pip install -e .` and activate your venv.
+- `checks/dependency_alignment.py`
+- `checks/frameworks.py`
+- `checks/databases.py`
+- `checks/runtime_versions.py` for the Rust toolchain edge case
+- `depguard.py` for the CLI summary note
 
-**Windows encoding** — DepGuard reconfigures stdout to UTF-8 on Windows. Use PowerShell or Windows Terminal.
+The goal is to avoid misleading statements such as treating Oracle-related signals as guaranteed Oracle production usage.
 
-**pip install from GitHub fails** — Ensure `git` is on PATH, or clone and `pip install -e .` locally.
+### Adding or changing checks
 
-**Checks fail on a healthy project** — Some checks depend on your local environment (venv, Docker, Node). Read the printed fix commands.
+1. Update detection rules if the check depends on stack discovery.
+2. Implement the check in `checks/`.
+3. Register it in `checks/__init__.py`.
+4. Add focused tests under `tests/`.
+5. Keep wording calibrated to the evidence level.
 
----
+### Story so far
 
-## Handoff notes for the next developer / AI
+- DepGuard started as the standalone project scanner.
+- The engine expanded into a detection-driven system with broader stack support.
+- Dependency sensing moved beyond manifests into code-import signals.
+- Communication was tightened so grey areas are explained carefully.
+- `depguard-slack` was then built as a separate Slack/MCP delivery layer for demos and real usage.
 
-### What this repo is
+### Demo context
 
-Cross-platform Python CLI. Entry point: `depguard.py`. Package name: `depguard`. Version in `checks/__init__.py` and `pyproject.toml`.
+Useful demo targets include:
 
-### What was built (history)
+- `DepGuard` itself
+- a known public demo repo such as `chaosapp-demo` when available
+- any public GitHub repo with visible stack markers for Slack demonstrations
 
-1. Context-driven detection in `checks/detection.py` for languages, frameworks, infrastructure, and databases
-2. Source-aware dependency sensing that compares known imports against manifest declarations
-3. Runtime version checks for Python, Node.js, Java, Go, .NET, PHP, Rust, and Ruby
-4. Cross-platform fix commands centralized in `checks/base.py`
-5. Renamed from `doctor.py` → `depguard.py`, now at `v1.1.0`
-6. Packaging via `pyproject.toml` with console script `depguard`
-7. Screenshot at `docs/screenshots/depguard-scan.png`
-8. Stress tests removed — production CLI only
-9. Slack integration lives in **separate repo** — do not add Slack code here
+### Troubleshooting for maintainers
 
-### What not to do
-
-- Do not commit `depguard-slack/` into this repo (it is gitignored)
-- Do not use old tags for installs — use `v1.1.0`
-- Do not re-add stress test fixtures to this repo unless explicitly requested
+- If a warning sounds too certain, check whether the evidence is signal-based instead of configuration-based.
+- If Slack behavior needs changes, make them in `depguard-slack`, not here.
+- If a downstream demo behaves differently from the CLI, compare the pinned release in the Slack repo against the local core checkout.
 
 ### Related repo
 
-All Slack, MCP, Railway, and `/depguard` slash command work → [depguard-slack](https://github.com/ernestkibz/depguard-slack)
+Slack app, MCP server, Railway deployment, slash command behavior, and Slack message formatting live in `depguard-slack`:
+
+- https://github.com/ernestkibz/depguard-slack
 
 ---
 
 ## Links
 
-- Repository: [github.com/ernestkibz/DepGuard](https://github.com/ernestkibz/DepGuard)
-- Slack integration: [github.com/ernestkibz/depguard-slack](https://github.com/ernestkibz/depguard-slack)
-- Full overview: [README.md](README.md)
-- License: [MIT](LICENSE)
+- Core repo: https://github.com/ernestkibz/DepGuard
+- Separate Slack repo: https://github.com/ernestkibz/depguard-slack
+- Overview: [README.md](README.md)

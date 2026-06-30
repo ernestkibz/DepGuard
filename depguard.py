@@ -13,6 +13,12 @@ from rich.table import Table
 
 from checks import ALL_CHECKS, CheckResult, Status, __version__, detect_project
 
+AMBIGUITY_WARNING_CHECKS = {
+    "Dependency Alignment",
+    "Framework Configuration",
+    "Database Configuration",
+}
+
 
 def render_result(console: Console, result: CheckResult) -> None:
     if result.status is Status.PASS:
@@ -29,6 +35,9 @@ def render_result(console: Console, result: CheckResult) -> None:
         f"{icon} [bold {style}]{result.name}[/bold {style}] — "
         f"[{style}]{result.message}[/{style}]"
     )
+
+    if result.suggestion:
+        console.print(f"   [dim]Suggestion:[/dim] {result.suggestion}")
 
     if result.fix_command and result.status is not Status.PASS:
         console.print(f"   [dim]Fix:[/dim] [cyan]{result.fix_command}[/cyan]")
@@ -62,6 +71,7 @@ def run_checks(project: Path) -> list[CheckResult]:
                     status=Status.FAIL,
                     message=f"Check crashed: {exc}",
                     fix_command=None,
+                    suggestion="Inspect the failing project files or rerun after fixing the underlying tool/configuration error.",
                 )
             )
     return results
@@ -85,7 +95,10 @@ def build_summary_table(results: list[CheckResult], passed: int) -> Table:
 
     for result in results:
         label, color = status_labels[result.status]
-        table.add_row(result.name, f"[{color}]{label}[/{color}]", result.message)
+        details = result.message
+        if result.suggestion:
+            details += f"\nSuggestion: {result.suggestion}"
+        table.add_row(result.name, f"[{color}]{label}[/{color}]", details)
 
     table.add_section()
     table.add_row(
@@ -94,6 +107,13 @@ def build_summary_table(results: list[CheckResult], passed: int) -> Table:
         "",
     )
     return table
+
+
+def has_ambiguity_warnings(results: list[CheckResult]) -> bool:
+    return any(
+        result.status is Status.WARN and result.name in AMBIGUITY_WARNING_CHECKS
+        for result in results
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -154,6 +174,11 @@ def main(argv: list[str] | None = None) -> int:
     console.print(build_summary_table(results, passed))
     console.print()
     console.print(f"[bold]Final score:[/bold] {passed}/{len(results)} checks passed")
+    if has_ambiguity_warnings(results):
+        console.print(
+            "[dim]Note:[/dim] Some warnings are signal-based rather than hard proof. "
+            "Review optional adapters, example code, monorepo layouts, and environment-managed config before treating them as confirmed issues."
+        )
 
     return 0 if passed == len(results) else 1
 

@@ -79,6 +79,10 @@ def check_node_version(context: ProjectContext) -> CheckResult | None:
             status=Status.FAIL,
             message=f"Node.js is not installed, but {required_text} is required.",
             fix_command=node_version_fix(required_text),
+            suggestion=(
+                f"Install Node.js {required_text} or newer, reopen your terminal, "
+                "and rerun dependency installation from the project root."
+            ),
         )
 
     try:
@@ -89,6 +93,10 @@ def check_node_version(context: ProjectContext) -> CheckResult | None:
             status=Status.FAIL,
             message=f"Could not read Node.js version: {exc}",
             fix_command=node_version_fix(required_text),
+            suggestion=(
+                "Check that `node --version` runs successfully in this shell and that the "
+                "expected Node.js installation is first on PATH."
+            ),
         )
 
     if result.returncode != 0:
@@ -97,6 +105,10 @@ def check_node_version(context: ProjectContext) -> CheckResult | None:
             status=Status.FAIL,
             message="Node.js is installed but `node --version` failed.",
             fix_command=node_version_fix(required_text),
+            suggestion=(
+                "Fix the local Node.js installation or PATH issue, then rerun DepGuard and "
+                "your package manager from the same shell."
+            ),
         )
 
     current = parse_version_numbers(result.stdout.strip())
@@ -114,4 +126,8 @@ def check_node_version(context: ProjectContext) -> CheckResult | None:
         status=Status.FAIL,
         message=f"Node.js {current_text} does not satisfy required {required_text}.",
         fix_command=node_version_fix(required_text),
+        suggestion=(
+            f"Switch this project to Node.js {required_text} or newer, then rerun "
+            "`npm install`, `pnpm install`, or `yarn install` in the updated shell."
+        ),
     )

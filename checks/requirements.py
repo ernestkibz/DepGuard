@@ -43,6 +43,10 @@ def check_requirements(context: ProjectContext) -> CheckResult | None:
             status=Status.FAIL,
             message=f"Could not run pip: {exc}",
             fix_command=f"{sys.executable} -m pip install -r requirements.txt",
+            suggestion=(
+                "Make sure pip is available in the active Python environment, then rerun "
+                "this check from an activated virtual environment if the project uses one."
+            ),
         )
 
     if dry_run.returncode == 0:
@@ -59,6 +63,10 @@ def check_requirements(context: ProjectContext) -> CheckResult | None:
             status=Status.WARN,
             message="pip is too old for dry-run validation; upgrade pip to verify packages.",
             fix_command=f"{sys.executable} -m pip install --upgrade pip",
+            suggestion=(
+                "Upgrade pip in the interpreter you use for this project, then rerun "
+                "DepGuard or test installs in a clean virtual environment."
+            ),
         )
 
     detail = stderr.splitlines()[-1] if stderr else "pip install failed."
@@ -67,4 +75,8 @@ def check_requirements(context: ProjectContext) -> CheckResult | None:
         status=Status.FAIL,
         message=f"requirements.txt has install issues: {detail}",
         fix_command=f"{sys.executable} -m pip install -r requirements.txt",
+        suggestion=(
+            "Review the failing package or pinned version, confirm it exists for this Python "
+            "version and platform, then retry inside a clean virtual environment."
+        ),
     )

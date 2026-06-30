@@ -27,4 +27,8 @@ def check_env_file(context: ProjectContext) -> CheckResult | None:
         status=Status.WARN,
         message=".env is missing but .env.example exists.",
         fix_command=copy_env_command(context.project),
+        suggestion=(
+            "Copy the example file, fill in local secrets or service URLs, and keep real "
+            "credentials out of version control."
+        ),
     )

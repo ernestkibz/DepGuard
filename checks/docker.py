@@ -36,6 +36,10 @@ def check_docker(context: ProjectContext) -> CheckResult | None:
             status=Status.FAIL,
             message="Dockerfile exists but Docker is not installed or not on PATH.",
             fix_command=docker_install_fix(),
+            suggestion=(
+                "Install Docker before running image builds, compose commands, or container-based "
+                "development tasks for this project."
+            ),
         )
 
     try:
@@ -46,6 +50,10 @@ def check_docker(context: ProjectContext) -> CheckResult | None:
             status=Status.FAIL,
             message=f"Docker is on PATH but not responding: {exc}",
             fix_command=docker_daemon_fix(),
+            suggestion=(
+                "Start Docker Desktop or the Docker daemon for this machine, then rerun "
+                "container commands from the project root."
+            ),
         )
 
     if result.returncode != 0:
@@ -54,6 +62,10 @@ def check_docker(context: ProjectContext) -> CheckResult | None:
             status=Status.WARN,
             message="Docker is installed but the daemon is not running.",
             fix_command=docker_daemon_fix(),
+            suggestion=(
+                "Start the Docker daemon before running local builds, compose stacks, "
+                "or integration workflows that rely on containers."
+            ),
         )
 
     return CheckResult(

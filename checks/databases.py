@@ -36,8 +36,13 @@ def check_database_configuration(context: ProjectContext) -> CheckResult | None:
             name=name,
             status=Status.WARN,
             message=(
-                "Detected database usage but could not find obvious connection settings for: "
+                "DepGuard found database-related dependencies or code signals, but could not confirm common connection markers for: "
                 + ", ".join(missing)
+                + ". This may be expected if configuration lives in deployment variables, a secrets manager, optional adapters, or non-standard config files."
+            ),
+            suggestion=(
+                "Verify the real runtime database from environment variables, secrets management, deployment config, "
+                "or connection factory code before treating this as a confirmed production dependency."
             ),
         )
 
