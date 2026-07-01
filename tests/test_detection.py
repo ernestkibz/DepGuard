@@ -149,6 +149,41 @@ class DetectionTests(unittest.TestCase):
             self.assertEqual(results[0].name, "Context Summary")
             self.assertEqual(results[0].message, "php")
 
+    def test_polyglot_python_and_node_detects_both_stacks(self) -> None:
+        with self.make_project() as temp_dir:
+            root = Path(temp_dir)
+            self.write(
+                root,
+                "pyproject.toml",
+                '[project]\nname = "fullstack"\nrequires-python = ">=3.11"\n',
+            )
+            self.write(root, "requirements.txt", "django>=5.0\n")
+            self.write(root, "app.py", "import django\n")
+            self.write(
+                root,
+                "package.json",
+                '{"name": "web", "dependencies": {"next": "14.2.0", "react": "18.2.0"}}',
+            )
+            self.write(root, "next.config.js", "module.exports = {};")
+            self.write(root, "pages/index.tsx", "import React from 'react';\n")
+
+            context = detect_project(root)
+
+            self.assertIn("python", context.languages)
+            self.assertIn("node", context.languages)
+            self.assertIn("Next.js", context.frameworks)
+            self.assertIn("Django", context.frameworks)
+
+            from checks.python_version import check_python_version
+            from checks.node_version import check_node_version
+            from checks.node_modules import check_node_modules
+            from checks.requirements import check_requirements
+
+            self.assertIsNotNone(check_python_version(context))
+            self.assertIsNotNone(check_node_version(context))
+            self.assertIsNotNone(check_node_modules(context))
+            self.assertIsNotNone(check_requirements(context))
+
     def test_nested_git_repo_is_ignored_during_detection(self) -> None:
         with self.make_project() as temp_dir:
             root = Path(temp_dir)
