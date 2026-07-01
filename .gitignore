@@ -26,5 +26,9 @@ Thumbs.db
 *.log
 logs/
 
+# Builder/owner handoff — not for public repo
+HANDOFF.md
+*.tmp.pyc
+
 # Separate repo — github.com/ernestkibz/depguard-slack
 depguard-slack/
