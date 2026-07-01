@@ -9,7 +9,7 @@ Overview: [README.md](README.md)
 ## Install from GitHub
 
 ```bash
-pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.0"
+pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.1"
 depguard /path/to/project
 ```
 
@@ -75,7 +75,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.0"
+      - run: pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.1"
       - run: depguard .
 ```
 

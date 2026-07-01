@@ -31,7 +31,7 @@ Supported detection includes:
 Install from GitHub:
 
 ```bash
-pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.0"
+pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.1"
 depguard /path/to/project
 ```
 

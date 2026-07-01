@@ -1,6 +1,6 @@
 """DepGuard — project setup checks."""
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 from checks.base import CheckResult, Status
 from checks.databases import check_database_configuration
