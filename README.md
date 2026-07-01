@@ -19,7 +19,7 @@ DepGuard:
 
 Supported detection includes:
 
-- **Languages:** Python, Node.js, Java, Go, .NET, PHP, Rust, Ruby
+- **Languages:** Python, Node.js, JavaScript, TypeScript, HTML, Java, Go, .NET, PHP, Rust, Ruby
 - **Frameworks:** React, Next.js, Django, Flask, FastAPI, Spring Boot, ASP.NET, Laravel, Ruby on Rails
 - **Infrastructure:** Docker, Docker Compose, Kubernetes, GitHub Actions, Terraform
 - **Databases:** PostgreSQL, MySQL, MongoDB, Redis, Oracle Database
@@ -31,7 +31,7 @@ Supported detection includes:
 Install from GitHub:
 
 ```bash
-pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.1"
+pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.2"
 depguard /path/to/project
 ```
 
@@ -81,6 +81,8 @@ Each failing or warning check includes:
 
 - **Suggestion** — what to investigate or do next in plain language
 - **Fix** — a copy-paste command when one is available
+
+DepGuard detects **HTML**, **JavaScript**, and **TypeScript** even when no `package.json` exists — useful for static sites, data pages, and script-only folders. When JS/TS is present without a manifest, DepGuard warns that dependency tooling is undefined.
 
 ### Grey-area warnings
 

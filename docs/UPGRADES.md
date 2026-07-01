@@ -140,7 +140,7 @@ Requires secure GitHub token handling, never logged, scoped read-only — separa
 
 | Upgrade | Target version | Status |
 |---------|----------------|--------|
-| Setup + multi-stack alignment | v1.1.0 | **Shipped** |
+| Setup + multi-stack alignment | v1.1.2 | **Shipped** (includes HTML, JavaScript, TypeScript) |
 | Advisory / OSV scanning | v2.0.0 | Planned |
 | Manifest install validation (all ecosystems) | v2.x | Planned |
 | Monorepo roots | v2.x | Planned |

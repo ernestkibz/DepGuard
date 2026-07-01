@@ -9,7 +9,7 @@ Overview: [README.md](README.md)
 ## Install from GitHub
 
 ```bash
-pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.1"
+pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.2"
 depguard /path/to/project
 ```
 
@@ -75,7 +75,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.1"
+      - run: pip install "git+https://github.com/ernestkibz/DepGuard.git@v1.1.2"
       - run: depguard .
 ```
 
@@ -133,7 +133,8 @@ for result in results:
 
 **Optional** (only when scanning matching projects):
 
-- Node.js, Java, Go, .NET SDK, PHP, Rust, Ruby
+- Node.js, JavaScript, TypeScript, HTML
+- Java, Go, .NET SDK, PHP, Rust, Ruby
 - Docker, kubectl, Terraform, Git
 
 DepGuard skips checks that do not apply to the detected stack.

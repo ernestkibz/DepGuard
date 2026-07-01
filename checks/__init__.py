@@ -1,6 +1,6 @@
 """DepGuard — project setup checks."""
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 from checks.base import CheckResult, Status
 from checks.databases import check_database_configuration
@@ -25,6 +25,12 @@ from checks.runtime_versions import (
 )
 from checks.venv_active import check_venv_active
 
+from checks.web_frontend import (
+    check_html_content,
+    check_javascript_manifest,
+    check_typescript_configuration,
+)
+
 ALL_CHECKS = [
     ("Python Version", check_python_version),
     ("Node Version", check_node_version),
@@ -36,6 +42,9 @@ ALL_CHECKS = [
     ("Ruby Version", check_ruby_version),
     ("Requirements Installable", check_requirements),
     ("Node Modules", check_node_modules),
+    ("HTML Content", check_html_content),
+    ("JavaScript / TypeScript Manifest", check_javascript_manifest),
+    ("TypeScript Configuration", check_typescript_configuration),
     ("Dependency Alignment", check_dependency_alignment),
     ("Framework Configuration", check_framework_configuration),
     ("Environment File", check_env_file),

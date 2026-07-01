@@ -59,7 +59,7 @@ def _required_from_package_json(context: ProjectContext) -> tuple[int, int, int]
 
 def check_node_version(context: ProjectContext) -> CheckResult | None:
     name = "Node Version"
-    if not context.has_language("node"):
+    if not context.has_web_scripting():
         return None
 
     required = _required_from_nvmrc(context) or _required_from_package_json(context)

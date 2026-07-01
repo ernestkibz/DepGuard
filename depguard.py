@@ -43,10 +43,29 @@ def render_result(console: Console, result: CheckResult) -> None:
         console.print(f"   [dim]Fix:[/dim] [cyan]{result.fix_command}[/cyan]")
 
 
+LANGUAGE_LABELS = {
+    "python": "Python",
+    "node": "Node.js",
+    "javascript": "JavaScript",
+    "typescript": "TypeScript",
+    "html": "HTML",
+    "java": "Java",
+    "go": "Go",
+    "dotnet": ".NET",
+    "php": "PHP",
+    "rust": "Rust",
+    "ruby": "Ruby",
+}
+
+
 def describe_detected_stack(project_context) -> str:
     parts: list[str] = []
     if project_context.languages:
-        parts.append("Languages: " + ", ".join(project_context.languages))
+        labels = [
+            LANGUAGE_LABELS.get(language, language.title())
+            for language in sorted(project_context.languages)
+        ]
+        parts.append("Languages: " + ", ".join(labels))
     if project_context.frameworks:
         parts.append("Frameworks: " + ", ".join(project_context.frameworks))
     if project_context.infrastructure:

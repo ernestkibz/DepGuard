@@ -39,7 +39,9 @@ LANGUAGE_FILES = {
 
 LANGUAGE_SUFFIXES = {
     "python": {".py"},
-    "node": NODE_SOURCE_SUFFIXES,
+    "javascript": {".js", ".jsx", ".mjs", ".cjs"},
+    "typescript": {".ts", ".tsx"},
+    "html": {".html", ".htm"},
     "java": {".java"},
     "go": {".go"},
     "dotnet": {".cs", ".csproj", ".sln"},
@@ -229,6 +231,13 @@ class ProjectContext:
 
     def inferred_for(self, ecosystem: str) -> frozenset[str]:
         return self.inferred_dependencies.get(ecosystem, frozenset())
+
+    def has_web_scripting(self) -> bool:
+        return (
+            self.has_language("node")
+            or self.has_language("javascript")
+            or self.has_language("typescript")
+        )
 
     def declares_dependency(self, ecosystem: str, name: str) -> bool:
         declared = self.declared_for(ecosystem)

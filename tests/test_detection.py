@@ -184,6 +184,39 @@ class DetectionTests(unittest.TestCase):
             self.assertIsNotNone(check_node_modules(context))
             self.assertIsNotNone(check_requirements(context))
 
+    def test_detects_html_static_site(self) -> None:
+        with self.make_project() as temp_dir:
+            root = Path(temp_dir)
+            self.write(root, "index.html", "<!DOCTYPE html><html><body>Hi</body></html>\n")
+            self.write(root, "setup.html", "<html><body>Setup</body></html>\n")
+            self.write(root, "data/items.json", "{}\n")
+
+            context = detect_project(root)
+            self.assertIn("html", context.languages)
+
+            from checks.web_frontend import check_html_content
+
+            result = check_html_content(context)
+            self.assertIsNotNone(result)
+            assert result is not None
+            self.assertEqual(result.status, Status.PASS)
+            self.assertIn("HTML content detected", result.message)
+
+    def test_typescript_without_tsconfig_warns(self) -> None:
+        with self.make_project() as temp_dir:
+            root = Path(temp_dir)
+            self.write(root, "src/app.ts", "export const app = 1;\n")
+
+            context = detect_project(root)
+            self.assertIn("typescript", context.languages)
+
+            from checks.web_frontend import check_typescript_configuration
+
+            result = check_typescript_configuration(context)
+            self.assertIsNotNone(result)
+            assert result is not None
+            self.assertEqual(result.status, Status.WARN)
+
     def test_nested_git_repo_is_ignored_during_detection(self) -> None:
         with self.make_project() as temp_dir:
             root = Path(temp_dir)
